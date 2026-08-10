@@ -1,0 +1,24 @@
+import type { Product, SizeOption } from '../types/shop';
+
+// Availability is optional on Product: mock data leaves it undefined, which we
+// treat as in-stock. Only Shopify-backed products carry real availability.
+
+export const isSizeSoldOut = (product: Product, size: SizeOption) =>
+  product.soldOutSizes?.includes(size) ?? false;
+
+export const isProductSoldOut = (product: Product) => {
+  if (product.available === false) {
+    return true;
+  }
+
+  if (!product.soldOutSizes?.length) {
+    return false;
+  }
+
+  return product.sizes.every((size) => product.soldOutSizes?.includes(size));
+};
+
+export const getFirstAvailableSize = (product: Product): SizeOption =>
+  product.sizes.find((size) => !isSizeSoldOut(product, size)) ??
+  product.sizes[0] ??
+  'M';
