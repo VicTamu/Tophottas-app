@@ -10,7 +10,7 @@ import type {
 
 const STORE_DOMAIN = process.env.EXPO_PUBLIC_SHOPIFY_STORE_DOMAIN;
 const STOREFRONT_TOKEN = process.env.EXPO_PUBLIC_SHOPIFY_STOREFRONT_API_TOKEN;
-const API_VERSION = process.env.EXPO_PUBLIC_SHOPIFY_API_VERSION ?? '2026-04';
+const API_VERSION = process.env.EXPO_PUBLIC_SHOPIFY_API_VERSION ?? '2026-07';
 
 interface ShopifyCartLine {
   id: string;
