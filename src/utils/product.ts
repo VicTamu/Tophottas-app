@@ -1,10 +1,18 @@
-import type { Product, SizeOption } from '../types/shop';
+import type { CollectionKey, Product, SizeOption } from '../types/shop';
 
 // Availability is optional on Product: mock data leaves it undefined, which we
 // treat as in-stock. Only Shopify-backed products carry real availability.
 
 export const isSizeSoldOut = (product: Product, size: SizeOption) =>
   product.soldOutSizes?.includes(size) ?? false;
+
+export const productMatchesCollection = (
+  product: Product,
+  collection: CollectionKey
+) =>
+  collection === 'all' ||
+  product.collection === collection ||
+  Boolean(product.collectionKeys?.includes(collection));
 
 export const isProductSoldOut = (product: Product) => {
   if (product.available === false) {

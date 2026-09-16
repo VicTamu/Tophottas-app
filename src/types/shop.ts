@@ -21,6 +21,7 @@ export interface Product {
   compareAtPrice?: number;
   accentColor: string;
   collection: Exclude<CollectionKey, 'all'>;
+  collectionKeys?: Exclude<CollectionKey, 'all'>[];
   sizes: SizeOption[];
   /** Overall availability. Undefined means assume in-stock (mock data). */
   available?: boolean;

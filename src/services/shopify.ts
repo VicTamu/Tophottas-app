@@ -7,6 +7,7 @@ import type {
   ProductFilters,
   SizeOption,
 } from '../types/shop';
+import { productMatchesCollection } from '../utils/product';
 
 const STORE_DOMAIN = process.env.EXPO_PUBLIC_SHOPIFY_STORE_DOMAIN;
 const STOREFRONT_TOKEN = process.env.EXPO_PUBLIC_SHOPIFY_STOREFRONT_API_TOKEN;
@@ -42,7 +43,8 @@ const applyFilters = (products: Product[], filters?: ProductFilters) => {
   let next = products;
 
   if (filters?.collection && filters.collection !== 'all') {
-    next = next.filter((product) => product.collection === filters.collection);
+    const collection = filters.collection;
+    next = next.filter((product) => productMatchesCollection(product, collection));
   }
 
   if (filters?.query) {
@@ -105,16 +107,48 @@ const shortLabelFromTitle = (title: string) =>
     .join('')
     .toUpperCase();
 
-const inferCollection = (tags: string[]): Exclude<CollectionKey, 'all'> => {
-  const normalized = tags.map((tag) => tag.toLowerCase());
+const collectionFromValue = (value: string): Exclude<CollectionKey, 'all'> | null => {
+  const normalized = value.toLowerCase();
 
-  if (normalized.some((tag) => tag.includes('limited'))) return 'limited';
-  if (normalized.some((tag) => tag.includes('new'))) return 'new';
-  if (normalized.some((tag) => tag.includes('featured') || tag.includes('bestseller'))) {
+  if (normalized.includes('limited')) return 'limited';
+  if (normalized.includes('new')) return 'new';
+  if (
+    normalized.includes('featured') ||
+    normalized.includes('bestseller') ||
+    normalized.includes('frontpage')
+  ) {
     return 'bestsellers';
   }
 
-  return 'bestsellers';
+  return null;
+};
+
+const inferCollectionKeys = (
+  tags: string[],
+  collections: Array<{ handle: string; title: string }>
+): Exclude<CollectionKey, 'all'>[] => {
+  const keys = new Set<Exclude<CollectionKey, 'all'>>();
+
+  [...tags, ...collections.flatMap((collection) => [collection.handle, collection.title])]
+    .map(collectionFromValue)
+    .forEach((key) => {
+      if (key) keys.add(key);
+    });
+
+  return keys.size ? Array.from(keys) : ['bestsellers'];
+};
+
+const inferPrimaryCollection = (
+  tags: string[],
+  collectionKeys: Exclude<CollectionKey, 'all'>[]
+): Exclude<CollectionKey, 'all'> => {
+  const tagMatch = tags
+    .map(collectionFromValue)
+    .find((key): key is Exclude<CollectionKey, 'all'> => Boolean(key));
+
+  if (tagMatch) return tagMatch;
+
+  return collectionKeys[0] ?? 'bestsellers';
 };
 
 const pickAccentColor = (handle: string) => {
@@ -202,6 +236,12 @@ const mapSoldOutSizes = (
 };
 
 const mapProduct = (node: {
+  collections: {
+    nodes: Array<{
+      handle: string;
+      title: string;
+    }>;
+  };
   description: string;
   handle: string;
   featuredImage?: {
@@ -224,7 +264,8 @@ const mapProduct = (node: {
   const variants = node.variants.nodes;
   const selectedVariant =
     variants.find((variant) => variant.availableForSale) ?? variants[0];
-  const collection = inferCollection(node.tags);
+  const collectionKeys = inferCollectionKeys(node.tags, node.collections.nodes);
+  const collection = inferPrimaryCollection(node.tags, collectionKeys);
   const fallback = mockProducts.find(
     (product) => product.shopifyHandle === node.handle || product.id === node.handle
   );
@@ -249,14 +290,13 @@ const mapProduct = (node: {
       : fallback?.compareAtPrice,
     accentColor: fallback?.accentColor ?? pickAccentColor(node.handle),
     collection,
+    collectionKeys,
     sizes: parseSizes(variants),
     available: variants.some((variant) => variant.availableForSale),
     soldOutSizes: mapSoldOutSizes(variants),
     featured:
       fallback?.featured ??
-      node.tags.some((tag) =>
-        ['featured', 'bestseller', 'bestseller'].includes(tag.toLowerCase())
-      ),
+      collectionKeys.includes('bestsellers'),
     mood: fallback?.mood ?? `${collection} drop`,
   };
 };
@@ -269,6 +309,12 @@ const PRODUCTS_QUERY = `
         handle
         description
         tags
+        collections(first: 10) {
+          nodes {
+            title
+            handle
+          }
+        }
         featuredImage {
           altText
           url
@@ -398,6 +444,12 @@ export const shopifyCatalogService: CatalogService = {
     const data = await storefrontRequest<{
       products: {
         nodes: Array<{
+          collections: {
+            nodes: Array<{
+              handle: string;
+              title: string;
+            }>;
+          };
           description: string;
           featuredImage?: {
             altText?: string | null;

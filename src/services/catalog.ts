@@ -1,12 +1,14 @@
 import { mockProducts } from '../data/mockProducts';
 import { isShopifyConfigured, shopifyCatalogService } from './shopify';
 import type { CatalogService, Product, ProductFilters } from '../types/shop';
+import { productMatchesCollection } from '../utils/product';
 
 const applyFilters = (products: Product[], filters?: ProductFilters) => {
   let next = products;
 
   if (filters?.collection && filters.collection !== 'all') {
-    next = next.filter((product) => product.collection === filters.collection);
+    const collection = filters.collection;
+    next = next.filter((product) => productMatchesCollection(product, collection));
   }
 
   if (filters?.query) {

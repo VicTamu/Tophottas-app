@@ -39,6 +39,7 @@ import {
   getFirstAvailableSize,
   isProductSoldOut,
   isSizeSoldOut,
+  productMatchesCollection,
 } from './src/utils/product';
 import type { CustomerProfile, ProfileSectionKey } from './src/types/profile';
 import type { TabKey } from './src/types/navigation';
@@ -132,7 +133,7 @@ export default function App() {
   }, [loadCatalog]);
 
   const filteredProducts = products.filter((product) => {
-    if (selectedCollection !== 'all' && product.collection !== selectedCollection) return false;
+    if (!productMatchesCollection(product, selectedCollection)) return false;
     if (!query.trim()) return true;
     const normalized = query.trim().toLowerCase();
     return [product.name, product.tagline, product.description, product.mood]
