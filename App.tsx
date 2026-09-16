@@ -37,6 +37,7 @@ import { isShopifyConfigured } from './src/services/shopify';
 import { colors, spacing } from './src/theme';
 import {
   getFirstAvailableSize,
+  getProductCollectionKey,
   isProductSoldOut,
   isSizeSoldOut,
   productMatchesCollection,
@@ -141,6 +142,11 @@ export default function App() {
       .toLowerCase()
       .includes(normalized);
   });
+  const newArrivalProducts = products
+    .filter((product) => productMatchesCollection(product, 'new'))
+    .slice(0, 4);
+  const homePreviewProducts =
+    newArrivalProducts.length > 0 ? newArrivalProducts : products.slice(0, 4);
 
   const cartItems = cart
     .map((item) => {
@@ -345,7 +351,7 @@ export default function App() {
                             )}
                             <View style={styles.featuredTag}>
                               <Text style={styles.featuredTagText}>
-                                {collectionLabels[product.collection]}
+                                {collectionLabels[getProductCollectionKey(product, 'bestsellers')]}
                               </Text>
                             </View>
                             {soldOut ? (
@@ -381,10 +387,11 @@ export default function App() {
             <View style={styles.stack}>
               {isLoading
                 ? [0, 1, 2, 3].map((key) => <SkeletonCard key={key} />)
-                : products.slice(0, 4).map((product) => (
+                : homePreviewProducts.map((product) => (
                     <ProductCard
                       key={product.id}
                       product={product}
+                      collectionLabel={collectionLabels[getProductCollectionKey(product, 'new')]}
                       isAdding={isCartSyncing}
                       onOpen={openProduct}
                       onAdd={(item) => void handleAddToCart(item, getFirstAvailableSize(item))}
@@ -463,6 +470,9 @@ export default function App() {
             <ProductCard
               key={product.id}
               product={product}
+              collectionLabel={
+                collectionLabels[getProductCollectionKey(product, selectedCollection)]
+              }
               isAdding={isCartSyncing}
               onOpen={openProduct}
               onAdd={(item) => void handleAddToCart(item, getFirstAvailableSize(item))}
@@ -716,7 +726,9 @@ export default function App() {
                     </View>
                   ) : null}
                 </View>
-                <Text style={styles.heroLabel}>{selectedProduct.collection}</Text>
+                <Text style={styles.heroLabel}>
+                  {collectionLabels[getProductCollectionKey(selectedProduct, selectedCollection)]}
+                </Text>
                 <Text style={styles.detailTitle}>{selectedProduct.name}</Text>
                 <Text style={styles.detailTagline}>{selectedProduct.tagline}</Text>
                 <Text style={styles.heroText}>{selectedProduct.description}</Text>

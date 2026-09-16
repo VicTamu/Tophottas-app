@@ -15,15 +15,23 @@ import { isProductSoldOut } from '../../utils/product';
 import type { Product } from '../../types/shop';
 
 interface ProductCardProps {
+  collectionLabel?: string;
   isAdding?: boolean;
   onAdd: (product: Product) => void;
   onOpen: (product: Product) => void;
   product: Product;
 }
 
-export function ProductCard({ isAdding = false, onAdd, onOpen, product }: ProductCardProps) {
+export function ProductCard({
+  collectionLabel,
+  isAdding = false,
+  onAdd,
+  onOpen,
+  product,
+}: ProductCardProps) {
   const soldOut = isProductSoldOut(product);
   const disabled = soldOut || isAdding;
+  const displayCollectionLabel = collectionLabel ?? collectionLabels[product.collection];
   const onSale =
     product.compareAtPrice != null && product.compareAtPrice > product.price;
 
@@ -51,7 +59,7 @@ export function ProductCard({ isAdding = false, onAdd, onOpen, product }: Produc
         ) : null}
       </View>
       <View style={styles.productInfo}>
-        <Text style={styles.productMeta}>{collectionLabels[product.collection]}</Text>
+        <Text style={styles.productMeta}>{displayCollectionLabel}</Text>
         <Text style={styles.productName} numberOfLines={1}>
           {product.name}
         </Text>

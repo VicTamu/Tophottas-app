@@ -266,6 +266,7 @@ const mapProduct = (node: {
     variants.find((variant) => variant.availableForSale) ?? variants[0];
   const collectionKeys = inferCollectionKeys(node.tags, node.collections.nodes);
   const collection = inferPrimaryCollection(node.tags, collectionKeys);
+  const descriptionLead = node.description.split('.').find(Boolean)?.trim();
   const fallback = mockProducts.find(
     (product) => product.shopifyHandle === node.handle || product.id === node.handle
   );
@@ -279,10 +280,7 @@ const mapProduct = (node: {
     imageUrl: node.featuredImage?.url,
     name: node.title,
     shortLabel: fallback?.shortLabel ?? shortLabelFromTitle(node.title),
-    tagline:
-      fallback?.tagline ??
-      node.description.split('.').find(Boolean)?.trim() ??
-      'Shopify catalog product',
+    tagline: descriptionLead ?? fallback?.tagline ?? 'Shopify catalog product',
     description: node.description || fallback?.description || node.title,
     price: Number(selectedVariant?.price.amount ?? fallback?.price ?? 0),
     compareAtPrice: selectedVariant?.compareAtPrice
@@ -294,9 +292,7 @@ const mapProduct = (node: {
     sizes: parseSizes(variants),
     available: variants.some((variant) => variant.availableForSale),
     soldOutSizes: mapSoldOutSizes(variants),
-    featured:
-      fallback?.featured ??
-      collectionKeys.includes('bestsellers'),
+    featured: collectionKeys.includes('bestsellers'),
     mood: fallback?.mood ?? `${collection} drop`,
   };
 };
