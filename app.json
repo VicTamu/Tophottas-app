@@ -30,6 +30,11 @@
     },
     "plugins": [
       "expo-video"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "6ed5e972-e05b-42eb-b9aa-e0e7010ee35b"
+      }
+    }
   }
 }
